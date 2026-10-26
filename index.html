@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Gratis - Registro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        input[type="text"], input[type="tel"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #005a9e; }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <h2>Conectarse a WiFi Gratis</h2>
+    <form id="wifiForm">
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo" required>
+        <input type="tel" id="telefono" name="telefono" placeholder="Número de teléfono" required>
+        <button type="submit" id="btnConectar">Registrarse y Conectar</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('wifiForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnConectar');
+    btn.innerText = "Conectando...";
+    btn.disabled = true;
+
+    const nombre = document.getElementById('nombre').value;
+    const telefono = document.getElementById('telefono').value;
+    
+    // Obtener parámetros que Omada añade automáticamente a la URL original de redirección
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUrl = urlParams.get('target') || 'https://google.com';
+
+    // 1. Enviar datos a Google Sheets de manera asíncrona
+    fetch('https://script.google.com/macros/s/AKfycbx-GgHvTEo-cSp9pTa7TV-eeM1g_P8jWgy_6pCfLW08Rv7wQr7n84SrlzT4PB49eR5TWQ/exec', {
+        method: 'POST',
+        mode: 'no-cors', // Necesario para evitar bloqueos de origen cruzado en redes locales
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ 'nombre': nombre, 'telefono': telefono })
+    }).then(() => {
+        // 2. Autenticar inmediatamente al usuario en Omada redirigiéndolo a la controladora
+        // Omada inyecta dinámicamente un parámetro de envío en la URL llamado 'clientMac' o gestiona el submit directo.
+        // Para simplificar la conexión automática sin autenticación estricta de servidor:
+        const authUrl = urlParams.get('authUrl');
+        if (authUrl) {
+            // Redirige al endpoint de Omada para autorizar el dispositivo a internet
+            window.location.href = authUrl + "?target=" + encodeURIComponent(targetUrl);
+        } else {
+            // Alternativa de contingencia si se prueba fuera del ecosistema activo
+            window.location.href = targetUrl;
+        }
+    }).catch(err => {
+        alert('Error de conexión, intente nuevamente.');
+        btn.innerText = "Registrarse y Conectar";
+        btn.disabled = false;
+    });
+});
+</script>
+
+</body>
+</html>
